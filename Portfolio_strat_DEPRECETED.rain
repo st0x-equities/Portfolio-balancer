@@ -1,0 +1,40 @@
+
+/* strat to be deployed with compatible inputs/outputs in the context */
+input: context<0 0>(),
+output: context<0 1>(),
+
+:set(0x123 0.2),
+:set(0x456 0.4),
+:set(0x789 0.4),
+
+/*get prices*/
+input-price: get-price(input), 
+output-price: get-price(output), 
+
+/*get vault blanaces*/
+input-vault-balance: get-balance(input), 
+output-vault-balance: get-balance(output), 
+
+/* obtain required ratios of portfolio */
+input-required-ratio: get(input), 
+output-required-ratio: get(output), 
+
+/*put those ratios in relation to each other*/
+required-ratio: div(input-required-ratio output-required-ratio), 
+
+/* vault values */
+input-vault-value : mul(input-price input-vault-balance),  
+output-vault-value : mul(output-price output-vault-balance),
+
+/*find out what current ratio is */
+current-ratio: decimal18-div(input-vault-value output-vault-value)), 
+
+/*find amount to sell to make even*/
+ratio-gap:div(sub(1 div(current-ratio required-ratio) 2)), 
+value-gap: mul(output-vault-value ratio-gap),
+token-gap:div(value-gap output-price),
+
+/*sets sale of the output */
+amount: token-gap,
+io-ratio: decimal18-mul(required-ratio);
+

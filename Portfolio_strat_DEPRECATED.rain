@@ -1,0 +1,77 @@
+Caller_token_input: context <0 0>(), 
+Caller_token_output: context <0 1>()
+
+token_A: context <1 0>(),
+token_B: context <1 1>(),
+token_C: context <1 2>(),
+
+token_A_price: get_price, /* 10 */
+token_B_price: get_price, /* 5 */
+token_C_price: get_price, /* 20 */
+
+token_A_value: mul(token_A_price get-blanace(token_A)), /* 10 * 13 = 130 */
+token_B_value: mul(token_B_price get-blanace(token_B)), /* 5* 22 = 110 */
+token_C_value: mul(token_C_price get-blanace(token_C)), /* 20 * 4 = 120 */
+
+required-value: div(add(token_A_value token_B_value token_C_value) 3), /* (130 + 100 + 100) 3 = 120 */
+
+Token_A_value_diff: sub(token_A_value required-value), /* +10 */
+Token_B_value_diff: sub(token_B_value required-value), /* -10 */
+Token_C_value_diff: sub(token_C_value required-value), /* 0 */
+
+Token_A_unit_diff = div(token_A_value_diff token_A_price), /* = 0.33… */
+Token_B_unit_diff = div(token_A_value_diff token_B_price), /* -2 */
+Token_C_unit_diff = div(token_A_value_diff token_C_price), /* 0 */
+
+/*2 STEP TRADE VIA USDT*/
+
+USDT: 0x,
+USDT_balance: get-balance(USDT),
+
+/*find lowest*/
+Lowest_token_unit_diff: find-lowest(token_A_unit_diff token_B_unit_diff token_C_unit_diff), /*making up lowest word, if not use less-thans */
+
+lowest_token: if(equal(Lowest_token_unit_diff token_A_unit_diff) token_A
+/*Else*/      if(equal(Lowest_token_unit_diff token_B_unit_diff) token_B
+/*Else*/      Token_C)),    /* would this break if 2 unit diff have same value? way to add unique identifier that would not upset lowest function*/
+
+lowest_token_price: if(equal(Lowest_Token token_A) token_A_price
+/*Else*/            if(equal(Lowest_Token token_B) token_B_price
+/*Else*/            token_C_price)), 
+
+/*amount can buy with USDT, if more caps iut at difference*/
+buy_amount: if(more-than(mul(USDT_balance lowest_token_price) Lowest_token_unit_diff) Lowest_token_unit_diff
+/*Else*/    mul(USDT_balance lowest_token_price)),
+
+/*set sales */
+buy_values: lowest_token_price buy_amount,
+Token_A_sell: if(less-than(Token_A_value_diff 0) 0 /*Else*/ mul(Token_A_value_diff)) token_A_price,
+Token_B_sell: if(less-than(Token_B_value_diff 0) 0 /*Else*/ mul(Token_B_value_diff)) token_B_price,
+Token_C_sell: if(less-than(Token_C_value_diff 0) 0 /*Else*/ mul(Token_C_value_diff)) token_C_price, 
+
+trade: if(equal(caller_token_input lowest_token) buy_values
+/*Else*/ if(equal(caller_token_input USDT) and equal(caller_token_output Token_A) Token_A_sell,
+/*Else*/ if(equal(caller_token_input USDT) and equal(caller_token_output Token_B) Token_B_sell,
+/*Else*/ if(equal(caller_token_input USDT) and equal(caller_token_output Token_C) Token_C_sell;
+
+
+/*DIRECT ARB
+
+if equal(caller_token_input token-A) 
+
+True: 
+
+/* find the lowest unit diff 
+
+False: if equal(caller_token_input token-B) 
+
+True:
+
+False: if equal(caller_token_input token-C) */
+
+/* /*find highest
+Highest: find-highest(token_A_unit_diff token_B_unit_diff  token_C_unit_diff), /*making up highest word, if not use more-thans 
+
+hightest_Token: if(equal(highest token_A_unit_diff) token_A
+/*Else            if(equal(highest token_B_unit_diff) token_B)
+/*Else            Token_C)    /* would this break if 2 unit diff have same value? */ 

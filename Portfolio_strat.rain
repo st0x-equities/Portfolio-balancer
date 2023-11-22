@@ -1,0 +1,4 @@
+current-ratio: decimal18-div(input-vault-balance output-vault-balance),
+amount: decimal18-mul(output-vault-balance 5e16),
+io-ratio: decimal18-mul(current-ratio 105e16);
+

@@ -1,0 +1,64 @@
+
+/* strat to be deployed with compatible inputs/outputs in the context */
+input: context<0 0>(),
+output: context<0 1>(),
+
+:set(0x123 0.2),
+:set(0x456 0.4),
+:set(0x789 0.4),
+
+/*get prices*/
+input-price: get-price(input), /*5*/       /*2.25*/
+output-price: get-price(output), /*10*/    /*3*/
+
+/*get vault blanaces*/
+input-vault-balance: get-balance(input), /*9*/      /*1*/
+output-vault-balance: get-balance(output), /*10*/   /*4*/
+
+/* obtain required ratios of portfolio */
+input-required-ratio: get(input), /* 0.2 */     /*0.2*/
+output-required-ratio: get(output), /* 0.4 */   /*0.8*/
+
+/*put those ratios in relation to each other*/
+required-ratio: div(input-required-ratio output-required-ratio), 
+/* 0.2 / 0.4 = 0.5 */     /*0.2/0.8=0.25 */
+
+/* vault values */
+input-vault-value : mul(input-price input-vault-balance),  /*5*9 = 45*/      /*2.25 *1= 2.25*/
+output-vault-value : mul(output-price output-vault-balance),/*10*10 = 100*/  /*3*4=12*/
+
+/*find out what current ratio is */
+current-ratio: decimal18-div(input-vault-value output-vault-value)), 
+/*45/100 = 0.45*/  /*2.25/12=0.1875*/
+
+/*find amount to sell to make even*/
+ratio-gap:div(sub(1 div(current-ratio required-ratio) 2)), 
+/* (0.45 / 0.50) = 0.9, 1- 0.9 = 0.1, 0.1/2 = 0.05 */
+/*(0.1875 / 0.25) = 0.75, 1-0.75 = 0.25, 0.25/2= 0.125)*/
+
+value-gap: mul(output-vault-value ratio-gap),
+/* 100 * 0.05 = 5 */ /*12 * 0.125 = 1.5*/
+
+token-gap:div(value-gap output-price),
+/* 5 / 10 = 0.5 */    /*1.5 / 3 = 0.5*/
+
+/*sets sale of the output */
+amount: token-gap, /* 0.5 */    /*0.5*/
+io-ratio: decimal18-mul(required-ratio); /* 0.5 */  /*0.25*/
+
+/* 
+after
+#1
+token change +0.25 / -0.5
+price 5 / 10
+balance 9. / 9.5
+value 57.5 / 95
+required_ratio 0.5
+ratio_now 0.5
+
+#2
+price 2.25 / 3
+balance 2.5 / 3.625
+value 2.28375 / 10.875
+required_ratio 0.25
+ratio_now 0.21
